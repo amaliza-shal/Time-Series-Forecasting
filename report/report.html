@@ -85,31 +85,31 @@ total traffic.
 <tbody>
 <tr>
 <td style="text-align: left;">baseline (imports only)</td>
-<td style="text-align: right;">206.600</td>
+<td style="text-align: right;">204.400</td>
 <td style="text-align: left;">-</td>
 <td style="text-align: right;">0.000</td>
 </tr>
 <tr>
 <td style="text-align: left;">naive full single-file load (sms-call-internet-mi-2013-11-01.txt, all columns, no chunking)</td>
-<td style="text-align: right;">503.300</td>
-<td style="text-align: left;">8.0</td>
-<td style="text-align: right;">296.700</td>
+<td style="text-align: right;">500.800</td>
+<td style="text-align: left;">3.8</td>
+<td style="text-align: right;">296.400</td>
 </tr>
 <tr>
 <td style="text-align: left;">after chunked Pass 1 (ranking scan, all 62 files, 2 cols)</td>
-<td style="text-align: right;">170.800</td>
-<td style="text-align: left;">458.0</td>
-<td style="text-align: right;">-35.800</td>
+<td style="text-align: right;">150.100</td>
+<td style="text-align: left;">191.7</td>
+<td style="text-align: right;">-54.300</td>
 </tr>
 <tr>
 <td style="text-align: left;">after chunked Pass 2 (extraction scan, all 62 files, 3 cols)</td>
-<td style="text-align: right;">167.300</td>
-<td style="text-align: left;">575.3</td>
-<td style="text-align: right;">-39.300</td>
+<td style="text-align: right;">170.900</td>
+<td style="text-align: left;">154.9</td>
+<td style="text-align: right;">-33.500</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Discussion.</strong> The measured numbers confirm the concern: the naive single-file load (one of 62 files, ~340 MB on disk) pulled RSS from 204.0 MB to 484.4 MB - a <strong>+280.4 MB</strong> jump from a single file. The two chunked passes, by contrast, each scan the <em>entire</em> ~20 GB corpus (62 files) yet leave RSS essentially flat: Pass 1 (ranking scan, 155.6s) finished at 200.7 MB - actually <em>below</em> the pre-pass baseline once transient chunk buffers were freed - and Pass 2 (extraction scan, 206.6s) finished at 217.5 MB, a <strong>+13.5 MB</strong> increase from baseline. In other words, chunked processing of the full corpus added roughly 20x less resident memory than a naive full load of a single day's file. This is the load-bearing design decision that makes the rest of the pipeline tractable: Pass 1 turns the full 20 GB corpus into a single ranking table, and Pass 2 turns it into one small Parquet file that Notebook 2 works from entirely in memory, without ever opening a raw <code>.txt</code> file again.</p>
+<p><strong>Discussion.</strong> The measured numbers confirm the concern: the naive single-file load (one of 62 files, ~340 MB on disk) pulled RSS from 204.4 MB to 500.8 MB - a <strong>+296.4 MB</strong> jump from a single file in 3.8s. The two chunked passes, by contrast, each scan the <em>entire</em> ~20 GB corpus (62 files) yet leave RSS <em>below</em> the naive-load level throughout: Pass 1 (ranking scan, 191.7s) finished at 150.1 MB - <strong>54.3 MB below</strong> the pre-pass baseline once transient chunk buffers were freed - and Pass 2 (extraction scan, 154.9s) finished at 170.9 MB, <strong>33.5 MB below</strong> baseline. In other words, chunked processing of the full corpus left resident memory lower than it started, while a naive load of a single day's file alone added nearly 300 MB. (These exact RSS/timing figures vary somewhat run-to-run with system load, as they are live OS memory measurements rather than deterministic outputs - but the qualitative gap, a few-hundred-MB jump from one naive load versus a flat-or-negative delta from scanning the full corpus in chunks, is consistent across runs.) This is the load-bearing design decision that makes the rest of the pipeline tractable: Pass 1 turns the full 20 GB corpus into a single ranking table, and Pass 2 turns it into one small Parquet file that Notebook 2 works from entirely in memory, without ever opening a raw <code>.txt</code> file again.</p>
 <p><strong>Top 10 squares by total Internet traffic (Nov 1, 2013 - Jan 1, 2014):</strong></p>
 <table>
 <thead>
